@@ -18,7 +18,8 @@ class MyCP : public QCustomPlot
 {
     Q_OBJECT
 public:
-    MyCP(QWidget *parent = nullptr);
+    MyCP(QString mapName, QWidget *parent = nullptr);
+    QString m_mapName;
     ~MyCP();
 public slots:
     void paintPath();
@@ -33,7 +34,6 @@ protected:
 private:
     QPixmap *map{nullptr};
     QSizeF mapSize;
-    double ratio_map;
     QPointF originToBottomLeftInMap;
     int top, bottom, left, right;
     QCPItemPixmap *qcpItem_map{nullptr};
@@ -46,7 +46,6 @@ private:
     bool planningPath{false};
     void createPathFile();
     QCPItemLine *originPoint;
-    QString mapName;
     void drawTrace();
 };
 

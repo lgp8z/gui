@@ -9,8 +9,9 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   rviz
-  client
+  agent
 )
+find_package(yaml-cpp REQUIRED)
 
 find_package(Qt5  REQUIRED COMPONENTS Core Gui Widgets PrintSupport)
 set(CMAKE_AUTOMOC ON)
@@ -24,6 +25,8 @@ set(SOURCES
   src/qcustomplot.cpp
   src/vizlib.cpp
   src/leftwidget.cpp
+  src/rosnode.cpp
+  src/customwidget.cpp
 )
 
 set(FORMS
@@ -48,4 +51,5 @@ target_link_libraries(${PROJECT_NAME}_node
    ${catkin_LIBRARIES}
 )
 
+target_link_libraries(${PROJECT_NAME}_node yaml-cpp)
 target_link_libraries(${PROJECT_NAME}_node Qt5::Core Qt5::Gui Qt5::Widgets Qt5::PrintSupport)

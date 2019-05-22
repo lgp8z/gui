@@ -4,22 +4,27 @@
 #include <fstream>
 #include <string>
 #include "../include/gui1/moc_mycp.cpp"
+#include "yaml-cpp/yaml.h"
 
 using json = nlohmann::json;
 
-MyCP::MyCP(QWidget *parent):QCustomPlot(parent)
+MyCP::MyCP(QString mapName, QWidget *parent):m_mapName(mapName), QCustomPlot(parent)
 {
     this->xAxis->setVisible(false);
     this->yAxis->setVisible(false);
     this->setBackground(QBrush(QColor(0xcd, 0xcd, 0xcd)));
-    //this->settabletTracking(true);
     this->setMouseTracking(true);
-    mapName = "room";
-    QString mapfilePath = "/home/roboway/workspace/catkin_roboway/src/bringup/map/" + mapName + "_modify.pgm";
+
+    QString yamlFileQString = "/home/roboway/workspace/catkin_roboway/src/bringup/map/" + m_mapName + ".yaml";
+    std::string yamlFileString = yamlFileQString.toStdString();
+    YAML::Node config = YAML::LoadFile(yamlFileString);
+    auto resolution = config["resolution"].as<double>();
+    auto origin = config["origin"].as<std::vector<double>>();
+
+    QString mapfilePath = "/home/roboway/workspace/catkin_roboway/src/bringup/map/" + m_mapName + "_modify.pgm";
     map = new QPixmap(mapfilePath, 0, Qt::MonoOnly);
 
-    ratio_map = 10;
-    originToBottomLeftInMap = QPointF(1000, 1000);
+    originToBottomLeftInMap = QPointF(origin[0] / resolution * -1, origin[1] / resolution * -1);//此程序标识符中的origin为建图的起点, yaml文件中的origin为左下角的点在map坐标系的坐标
     mapSize = map->size();
 
     qcpItem_map = new QCPItemPixmap(this);
@@ -69,7 +74,7 @@ void MyCP::createPathFile()
     }
 
     std::ofstream out;
-    QString planPathString = "/home/roboway/workspace/catkin_roboway/src/bringup/map/" + mapName + "_path.json";
+    QString planPathString = "/home/roboway/workspace/catkin_roboway/src/bringup/map/" + m_mapName + "_path.json";
     std::string planPath = planPathString.toStdString();
     out.open(planPath.c_str());
 
@@ -77,7 +82,7 @@ void MyCP::createPathFile()
 }
 void MyCP::drawTrace()
 {
-    QString filename = "/home/roboway/workspace/catkin_roboway/src/bringup/map/" + mapName + "_trace.dat";
+    QString filename = "/home/roboway/workspace/catkin_roboway/src/bringup/map/" + m_mapName + "_trace.dat";
     QFile file(filename);
     if(file.open(QIODevice::ReadOnly))
     {

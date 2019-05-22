@@ -13,7 +13,8 @@ public:
     explicit VizlibTest(QWidget *parent = 0);
     ~VizlibTest();
 
-    void display();
+    void display_Slam();
+    void display_Navigation();
     void quit();
 private:
     rviz::VisualizationManager *manager_;

@@ -6,7 +6,6 @@
 #include <QCloseEvent>
 #include <QMessageBox>
 #include "../include/gui1/moc_mainwindow.cpp"
-#include "customWidgets.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent)
@@ -15,12 +14,27 @@ MainWindow::MainWindow(QWidget *parent) :
     setWindowTitle(QStringLiteral("控制界面"));
     setWindowState(Qt::WindowMaximized);
 
+    status = 0;
+    myCP = nullptr;
+    processWidget = new ProcessWidget(this);
+    processWidget->setModal(true);
+    processWidget->hide();
+
     rvizWidget = new VizlibTest(this);
-    myCP = new MyCP(this);
     leftWidget = new LeftWidget(this);
     leftWidget->hide();
-    nullWidget = new QWidget(this);
 
+    splitter = new QSplitter(this);
+    splitter->addWidget(leftWidget);
+    splitter->addWidget(rvizWidget);
+    splitter->setStretchFactor(0,0);
+    splitter->setStretchFactor(1,1);
+    for(int i = 0; i < splitter->count(); i++)
+    {
+        splitter->handle(i)->setEnabled(false);
+    }
+
+    nullWidget = new QWidget(this);
     setCentralWidget(nullWidget);
 
     CustomDockWindow *helpWidget = new CustomDockWindow(QStringLiteral("帮助"), this);
@@ -29,18 +43,62 @@ MainWindow::MainWindow(QWidget *parent) :
 
     QToolBar *toolBar = new QToolBar(this);
     toolBar->setObjectName("toobar");
-    toolBar->addAction(QStringLiteral("开始建图"), this, SLOT(startMappingSlot()));
+
+    startMappingAction = new QAction(QStringLiteral("开始建图"));
+    startMappingAction->setCheckable(true);
+    connect(startMappingAction, SIGNAL(triggered(bool)), this, SLOT(startMappingSlot()));
+    toolBar->addAction(startMappingAction);
     toolBar->addSeparator();
-    toolBar->addAction(QStringLiteral("自定义路径"), this, [=](){centralWidget()->setParent(0);setCentralWidget(myCP); myCP->paintPath();});
-    toolBar->addAction(QStringLiteral("设置终点"), myCP, SLOT(setStartPoint()));
-    toolBar->addAction(QStringLiteral("设置起点"), myCP, SLOT(setEndPoint()));
+
+    customPathAction = new QAction(QStringLiteral("绘制路径"));
+    customPathAction->setCheckable(true);
+    connect(customPathAction, SIGNAL(triggered(bool)), this, SLOT(customPath()));
+    toolBar->addAction(customPathAction);
+    toolBar->addAction(QStringLiteral("设置终点"), this, SLOT(setEndPoint()));
+    toolBar->addAction(QStringLiteral("设置起点"), this, SLOT(setStartPoint()));
     toolBar->addSeparator();
-    toolBar->addAction(QStringLiteral("启动业务"), this, SLOT(startNavigatingSlot()));
+
+    toolBar->addAction(QStringLiteral("上传地图"), this, SLOT(upload()));
     toolBar->addSeparator();
+
+    startNavigationAction = new QAction(QStringLiteral("启动业务"));
+    startNavigationAction->setCheckable(true);
+    connect(startNavigationAction, SIGNAL(triggered(bool)), this, SLOT(startNavigatingSlot()));
+    toolBar->addAction(startNavigationAction);
+    toolBar->addSeparator();
+
     toolBar->addAction(QStringLiteral("帮助"), this, [=](){helpWidget->show();});
     addToolBar(toolBar);
 
+    statusBarLabel = new QLabel(this);
+    statusBar()->addWidget(statusBarLabel);
+
+    keyControlProcess = new QProcess();
+    traceProcess = new QProcess();
+    commondProcess = new QProcess();
+
+    checkRosTimer = new QTimer(this);
+    checkRosTimer->setInterval(1000);
+    checkRosTimer->start();
+    connect(checkRosTimer, SIGNAL(timeout()), this, SLOT(checkRosSlot()));
+
     //loadLayout();
+}
+
+void MainWindow::checkRosSlot()
+{
+    if(ros::master::check())
+    {
+        if(QProcess::NotRunning == keyControlProcess->state())
+        {
+            keyControlProcess->start("roslaunch bringup key_control.launch");
+        }
+    }
+    else
+    {
+        if(QProcess::NotRunning != keyControlProcess->state())
+            keyControlProcess->kill();
+    }
 }
 void MainWindow::saveLayout()
 {
@@ -76,33 +134,151 @@ void MainWindow::loadLayout()
 void MainWindow::startMappingSlot()
 {
     QAction *action = (QAction *)sender();
-    QLineEditDialog dialog;
-    if(action->text() == QStringLiteral("开始建图"))
+
+    if(status == 0 || status == 3)
     {
+        if(!ros::master::check()) {
+            QMessageBox::warning(this, QStringLiteral("注意"), QStringLiteral("未连接机器人Wifi,不能执行此操作!"));
+            return;
+        }
+        QLineEditDialog dialog(QString(), this);
         if(dialog.exec() == QDialog::Rejected)
             return;
+        mapName = dialog.enteredString();
+
+        rosNode->clearOdom();
+        rosNode->startSlam();
+        traceProcess->start("rosrun roboway_tool trace " + mapName);
+
         action->setText(QStringLiteral("停止建图"));
-        QString mapName = dialog.enteredString();
         centralWidget()->setParent(0);
-        setCentralWidget(rvizWidget);
-        rvizWidget->display();
+        setCentralWidget(splitter);
+        leftWidget->show();
+        rvizWidget->display_Slam();
+        status = 1;
     }
-    else {
+    else if(status == 1)
+    {
+        QProcess process;
+        process.start("/home/roboway/workspace/catkin_roboway/src/bringup/script/save_map.sh " + mapName);
+        process.waitForFinished();
+        traceProcess->terminate();
+        traceProcess->waitForFinished();
+        rosNode->stopSlam();
+
+        QMessageBox::information(this, QStringLiteral("提示"), QStringLiteral("已停止建图, 请绘制路径"));
+        centralWidget()->setParent(0);
+        leftWidget->hide();
+        rvizWidget->quit();
+        setCentralWidget(nullWidget);
         action->setText(QStringLiteral("开始建图"));
+        status = 0;
     }
+    else
+    {
+        QMessageBox::warning(this, QStringLiteral("注意"), QStringLiteral("请先终止其他操作!"));
+    }
+}
+
+void MainWindow::customPath()
+{
+    qDebug() << "ddd";
+    if(status == 0 || status == 3) //开始画路径
+    {
+        QLineEditDialog dialog(mapName, this);
+        if(dialog.exec() == QDialog::Rejected)
+            return;
+        QString mapName_input = dialog.enteredString();
+
+        status = 2;
+        if(myCP != nullptr)//重画路径时如果是同一张地图,不需要new
+        {
+            if(myCP->m_mapName != mapName_input)
+            {
+                delete myCP;
+                myCP = new MyCP(mapName_input, this);
+            }
+        }
+        else
+        {
+            myCP = new MyCP(mapName_input, this);
+        }
+
+        centralWidget()->setParent(0);
+        setCentralWidget(myCP);
+        myCP->paintPath();
+    }
+    else if(status == 2)//绘制完成
+    {
+        status = 3;
+        myCP->paintPath();
+    }
+    else
+    {
+        QMessageBox::warning(this, QStringLiteral("注意"), QStringLiteral("请先终止其他操作!"));
+    }
+}
+void MainWindow::setStartPoint()
+{
+    if(status == 2)
+    {
+        myCP->setStartPoint();
+        status = 3;
+        customPathAction->setChecked(false);//同时需要把绘制路径的action的图标设置为un check
+    }
+}
+void MainWindow::setEndPoint()
+{
+    if(status == 2)
+        myCP->setEndPoint();
+}
+void MainWindow::upload()
+{
+    QLineEditDialog dialog(mapName, this);
+    if(dialog.exec() == QDialog::Rejected)
+        return;
+    QString mapName_input = dialog.enteredString();
+
+    processWidget->show();
+    connect(commondProcess, SIGNAL(finished(int)), SLOT(closeProcessWidget()));
+    commondProcess->start("/home/roboway/workspace/catkin_roboway/src/bringup/script/sync_file.sh " + mapName_input);
+}
+void MainWindow::closeProcessWidget()
+{
+    processWidget->close();
 }
 void MainWindow::startNavigatingSlot()
 {
     QAction *action = (QAction *)sender();
-    if(action->text() == QStringLiteral("启动业务"))
+
+    if(status == 0 || status == 3)
     {
+        if(0 == rosNode->getAgentStatus())//打开软件后 根据车子情况自动进入导航状态
+        {
+            rosNode->clearOdom();
+            rosNode->startNavigation();
+        }
+
         centralWidget()->setParent(0);
-        setCentralWidget(rvizWidget);
-        rvizWidget->display();
+        setCentralWidget(splitter);
+        leftWidget->hide();
+        rvizWidget->display_Navigation();
         action->setText(QStringLiteral("停止业务"));
+        status = 4;
     }
-    else {
+    else if(status == 4)
+    {
+        rosNode->stopNavigation();
+        centralWidget()->setParent(0);
+        leftWidget->hide();
+        rvizWidget->quit();
+        setCentralWidget(nullWidget);
         action->setText(QStringLiteral("启动业务"));
+        status = 0;
+    }
+    else
+    {
+        QMessageBox::warning(this, QStringLiteral("注意"), QStringLiteral("请先终止其他操作!"));
     }
 }
 
@@ -113,6 +289,13 @@ void MainWindow::closeEvent(QCloseEvent *event)
 }
 MainWindow::~MainWindow()
 {
-    delete myCP;
-    delete rvizWidget;
+    keyControlProcess->terminate();
+    keyControlProcess->waitForFinished();
+    delete keyControlProcess;
+    delete traceProcess;
+
+    if(myCP)
+        delete myCP;
+    if(rvizWidget)
+        delete rvizWidget;
 }
