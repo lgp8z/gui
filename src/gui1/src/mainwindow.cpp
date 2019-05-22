@@ -97,7 +97,10 @@ void MainWindow::checkRosSlot()
     else
     {
         if(QProcess::NotRunning != keyControlProcess->state())
-            keyControlProcess->kill();
+        {
+            keyControlProcess->terminate();
+            keyControlProcess->waitForFinished();
+        }
     }
 }
 void MainWindow::saveLayout()
