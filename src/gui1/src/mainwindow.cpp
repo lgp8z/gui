@@ -142,11 +142,15 @@ void MainWindow::startMappingSlot()
     {
         if(!ros::master::check()) {
             QMessageBox::warning(this, QStringLiteral("注意"), QStringLiteral("未连接机器人Wifi,不能执行此操作!"));
+            startMappingAction->setChecked(false);
             return;
         }
         QLineEditDialog dialog(QString(), this);
         if(dialog.exec() == QDialog::Rejected)
+        {
+            startMappingAction->setChecked(false);
             return;
+        }
         mapName = dialog.enteredString();
 
         rosNode->clearOdom();
@@ -180,6 +184,7 @@ void MainWindow::startMappingSlot()
     else
     {
         QMessageBox::warning(this, QStringLiteral("注意"), QStringLiteral("请先终止其他操作!"));
+        startMappingAction->setChecked(false);
     }
 }
 
@@ -190,7 +195,10 @@ void MainWindow::customPath()
     {
         QLineEditDialog dialog(mapName, this);
         if(dialog.exec() == QDialog::Rejected)
+        {
+            customPathAction->setChecked(false);
             return;
+        }
         QString mapName_input = dialog.enteredString();
 
         status = 2;
@@ -219,6 +227,7 @@ void MainWindow::customPath()
     else
     {
         QMessageBox::warning(this, QStringLiteral("注意"), QStringLiteral("请先终止其他操作!"));
+        customPathAction->setChecked(false);
     }
 }
 void MainWindow::setStartPoint()
@@ -282,6 +291,7 @@ void MainWindow::startNavigatingSlot()
     else
     {
         QMessageBox::warning(this, QStringLiteral("注意"), QStringLiteral("请先终止其他操作!"));
+        startNavigationAction->setChecked(false);
     }
 }
 
