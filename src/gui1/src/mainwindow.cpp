@@ -157,7 +157,7 @@ void MainWindow::setInfomationToServer()
     QByteArray post =  postString.toUtf8();
 
     QNetworkRequest req;
-    QString qurl = "http://api.roboway.cn/vehicleWeb/user/vehicle/saveSiteAndCommand?";
+    QString qurl = "http://api.roboway.cn/vehicleWeb/user/vehicle/saveSiteAndCommand";
     req.setUrl(QUrl(qurl));
     req.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
     manager->post(req, post);
@@ -352,8 +352,13 @@ MainWindow::~MainWindow()
     keyControlProcess->terminate();
     keyControlProcess->waitForFinished();
     delete keyControlProcess;
+    if(status == 1)
+    {
+        traceProcess->terminate();
+        traceProcess->waitForFinished();
+        rosNode->stopSlam();
+    }
     delete traceProcess;
-
     if(myCP)
         delete myCP;
     if(rvizWidget)
