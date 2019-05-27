@@ -7,6 +7,10 @@
 #include <QMessageBox>
 #include "../include/gui1/moc_mainwindow.cpp"
 
+#include <QtNetwork/QNetworkRequest>
+#include <QtNetwork/QNetworkReply>
+#include <QtNetwork/QNetworkAccessManager>
+
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent)
 {
@@ -134,6 +138,40 @@ void MainWindow::loadLayout()
     restoreState(layout_data);
 }
 
+void MainWindow::setInfomationToServer()
+{
+    QNetworkAccessManager* manager = new QNetworkAccessManager;
+
+    QString postString =
+                  QString("number=2")
+                + QString("&communicationId=000002")
+                + QString("&startSiteName=") + leftWidget->getStartName()
+                + QString("&startLongitude=") + QString::number(120)
+                + QString("&startLatitude=") + QString::number(33)
+                + QString("&endSiteName=") + leftWidget->getEndName()
+                + QString("&endLongitude=") + QString::number(120.1)
+                + QString("&endLatitude=") + QString::number(33.1)
+                + QString("&token=00");
+    qDebug() << postString;
+
+    QByteArray post =  postString.toUtf8();
+
+    QNetworkRequest req;
+    QString qurl = "http://api.roboway.cn/vehicleWeb/user/vehicle/saveSiteAndCommand?";
+    req.setUrl(QUrl(qurl));
+    req.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
+    manager->post(req, post);
+    QObject::connect(manager, &QNetworkAccessManager::finished, [](QNetworkReply* reply){
+            if(reply->error() != QNetworkReply::NoError)
+            {
+                qDebug() << "Error:" << reply->errorString();
+                return;
+            }
+            QByteArray buf = reply->readAll();
+            qDebug() << "OK:"<< buf;
+    });
+}
+
 void MainWindow::startMappingSlot()
 {
     QAction *action = (QAction *)sender();
@@ -166,6 +204,15 @@ void MainWindow::startMappingSlot()
     }
     else if(status == 1)
     {
+        if(leftWidget->getStartName().isEmpty() || leftWidget->getEndName().isEmpty())
+        {
+            QMessageBox::warning(this, QStringLiteral("注意"), QStringLiteral("未输入有效的起止地点!"));
+            startMappingAction->setChecked(true);
+            return;
+        }
+
+        //setInfomationToServer();
+
         QProcess process;
         process.start("/home/roboway/workspace/catkin_roboway/src/bringup/script/save_map.sh " + mapName);
         process.waitForFinished();

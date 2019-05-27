@@ -13,7 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
 )
 find_package(yaml-cpp REQUIRED)
 
-find_package(Qt5  REQUIRED COMPONENTS Core Gui Widgets PrintSupport)
+find_package(Qt5  REQUIRED COMPONENTS Core Gui Widgets PrintSupport Network)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -52,4 +52,4 @@ target_link_libraries(${PROJECT_NAME}_node
 )
 
 target_link_libraries(${PROJECT_NAME}_node yaml-cpp)
-target_link_libraries(${PROJECT_NAME}_node Qt5::Core Qt5::Gui Qt5::Widgets Qt5::PrintSupport)
+target_link_libraries(${PROJECT_NAME}_node Qt5::Core Qt5::Gui Qt5::Widgets Qt5::PrintSupport Qt5::Network)

@@ -52,6 +52,7 @@ private:
     QProcess *commondProcess;
     ProcessWidget *processWidget;
     QLabel *statusBarLabel;
+    void setInfomationToServer();
 signals:
     void killkey();
 };
