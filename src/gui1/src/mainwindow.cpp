@@ -211,7 +211,7 @@ void MainWindow::startMappingSlot()
             return;
         }
 
-        //setInfomationToServer();
+        setInfomationToServer();
 
         QProcess process;
         process.start("/home/roboway/workspace/catkin_roboway/src/bringup/script/save_map.sh " + mapName);
