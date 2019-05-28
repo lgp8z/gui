@@ -1,0 +1,11 @@
+#!/usr/bin/env xdg-open
+[Desktop Entry]
+Encoding=UTF-8
+Name=roboway
+Comment=roboway
+Exec=bash -i -c /home/roboway/workspace/gui/devel/lib/gui1/gui1_node
+Icon=/home/roboway/workspace/gui/src/gui1/src/car.png
+Terminal=false
+StartupNotify=false
+Type=Application
+Categories=Application;Development;
