@@ -206,21 +206,38 @@ void MainWindow::startMappingSlot()
     {
         if(leftWidget->getStartName().isEmpty() || leftWidget->getEndName().isEmpty())
         {
-            QMessageBox::warning(this, QStringLiteral("注意"), QStringLiteral("未输入有效的起止地点!"));
-            startMappingAction->setChecked(true);
-            return;
+            CancelMessageBox messageBox(QStringLiteral("未输入有效的起止地点!"));
+            if(messageBox.exec() > 0)//close and ok  , else 取消建图
+            {
+                startMappingAction->setChecked(true);
+                return;
+            }
+        }
+        else
+        {
+            CancelMessageBox messageBox(QStringLiteral("确认保存地图!"));
+            int result = messageBox.exec();
+            if(result == 1) // ok 建图
+            {
+                setInfomationToServer();
+
+                QProcess process;
+                process.start("/home/roboway/workspace/catkin_roboway/src/bringup/script/save_map.sh " + mapName);
+                process.waitForFinished();
+
+                QMessageBox::information(this, QStringLiteral("提示"), QStringLiteral("已停止建图, 请绘制路径"));
+            }
+            else if(result == 0) // close  关闭消息框  , else 取消建图
+            {
+                startMappingAction->setChecked(true);
+                return;
+            }
         }
 
-        setInfomationToServer();
-
-        QProcess process;
-        process.start("/home/roboway/workspace/catkin_roboway/src/bringup/script/save_map.sh " + mapName);
-        process.waitForFinished();
         traceProcess->terminate();
         traceProcess->waitForFinished();
         rosNode->stopSlam();
 
-        QMessageBox::information(this, QStringLiteral("提示"), QStringLiteral("已停止建图, 请绘制路径"));
         centralWidget()->setParent(0);
         leftWidget->hide();
         rvizWidget->quit();

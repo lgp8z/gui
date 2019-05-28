@@ -19,6 +19,20 @@
 #include <QVBoxLayout>
 #include <QDebug>
 
+
+class CancelMessageBox : public QMessageBox
+{
+    Q_OBJECT
+
+public:
+    CancelMessageBox(QString text, QWidget *parent = nullptr);
+public slots:
+    void setCancel();
+    void setOk();
+protected:
+    void closeEvent(QCloseEvent *event);
+};
+
 class ProcessWidget : public QDialog
 {
 public:

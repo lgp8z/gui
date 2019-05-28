@@ -1,6 +1,29 @@
 #include "customwidget.h"
 #include "../include/gui1/moc_customwidget.cpp"
 
+CancelMessageBox::CancelMessageBox(QString text, QWidget *parent):
+    QMessageBox(QMessageBox::Warning, QStringLiteral("注意"), text, QMessageBox::Cancel|QMessageBox::Ok, parent)
+{
+    QAbstractButton * cancelButton = this->button(QMessageBox::Cancel);
+    cancelButton->setText(QStringLiteral("取消建图"));
+    QAbstractButton * okButton = this->button(QMessageBox::Ok);
+    okButton->setText(QStringLiteral("确认"));
+    connect(cancelButton, SIGNAL(clicked(bool)), this, SLOT(setCancel()));
+    connect(okButton, SIGNAL(clicked(bool)), this, SLOT(setOk()));
+}
+void CancelMessageBox::closeEvent(QCloseEvent *event)
+{
+    setResult(0);
+}
+void CancelMessageBox::setCancel()
+{
+    setResult(-1);
+}
+void CancelMessageBox::setOk()
+{
+    setResult(1);
+}
+
 ProcessWidget::ProcessWidget(QWidget *parent): QDialog(parent)
 {
     this->setWindowTitle(QStringLiteral("注意"));
