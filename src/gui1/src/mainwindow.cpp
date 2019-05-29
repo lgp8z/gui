@@ -86,7 +86,7 @@ MainWindow::MainWindow(QWidget *parent) :
     checkRosTimer->start();
     connect(checkRosTimer, SIGNAL(timeout()), this, SLOT(checkRosSlot()));
 
-    //loadLayout();
+    loadLayout();
 }
 
 void MainWindow::checkRosSlot()

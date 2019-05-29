@@ -1,5 +1,6 @@
 #include "customwidget.h"
 #include "../include/gui1/moc_customwidget.cpp"
+#include <QTextBrowser>
 
 CancelMessageBox::CancelMessageBox(QString text, QWidget *parent):
     QMessageBox(QMessageBox::Warning, QStringLiteral("注意"), text, QMessageBox::Cancel|QMessageBox::Ok, parent)
@@ -72,9 +73,16 @@ void QLineEditDialog::accept()
 
 CustomDockWindow::CustomDockWindow(const QString &title, QWidget *parent): QDockWidget(title, parent){
     setFeatures(features() & ~QDockWidget::DockWidgetMovable);
-    QScrollArea * helpScrollArea = new QScrollArea(this);
-    QWidget *widget = new QWidget(helpScrollArea);
-    widget->setStyleSheet("QWidget{background-color: rgba(0,255,255,100)}");
-    helpScrollArea->setViewport(widget);
-    setWidget(helpScrollArea);
+    QTextEdit *widget = new QTextEdit(this);
+    //widget->setStyleSheet("QWidget{background-color: rgba(0,255,255,100)}");
+    setWidget(widget);
+    widget->setReadOnly(true);
+    QFile inputFile("/home/roboway/workspace/gui/src/gui1/src/operation");
+    if(inputFile.open(QIODevice::ReadOnly))
+    {
+        QTextStream in(&inputFile);
+        QString line = in.readAll();
+        inputFile.close();
+        widget->setPlainText(line);
+    }
 }
