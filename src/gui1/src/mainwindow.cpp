@@ -41,7 +41,7 @@ MainWindow::MainWindow(QWidget *parent) :
     nullWidget = new QWidget(this);
     setCentralWidget(nullWidget);
 
-    CustomDockWindow *helpWidget = new CustomDockWindow(QStringLiteral("帮助"), this);
+    helpWidget = new CustomDockWindow(QStringLiteral("帮助"), this);
     helpWidget->setObjectName("helpWidget");
     addDockWidget(Qt::RightDockWidgetArea, helpWidget);
 
@@ -239,9 +239,12 @@ void MainWindow::startMappingSlot()
         rosNode->stopSlam();
 
         centralWidget()->setParent(0);
+        setCentralWidget(nullWidget);
         leftWidget->hide();
         rvizWidget->quit();
-        setCentralWidget(nullWidget);
+        removeDockWidget(helpWidget);
+        addDockWidget(Qt::RightDockWidgetArea, helpWidget);
+        helpWidget->show();
         action->setText(QStringLiteral("开始建图"));
         status = 0;
     }

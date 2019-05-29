@@ -43,6 +43,7 @@ private:
     MyCP *myCP;
     LeftWidget *leftWidget;
     QWidget *nullWidget;
+    CustomDockWindow *helpWidget;
     QTimer *checkRosTimer;
     QProcess *keyControlProcess;
     QProcess *traceProcess;
