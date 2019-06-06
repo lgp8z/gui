@@ -43,7 +43,9 @@ MainWindow::MainWindow(QWidget *parent) :
 
     helpWidget = new CustomDockWindow(QStringLiteral("帮助"), this);
     helpWidget->setObjectName("helpWidget");
+    helpWidget->setMaximumWidth(200);
     addDockWidget(Qt::RightDockWidgetArea, helpWidget);
+
 
     QToolBar *toolBar = new QToolBar(this);
     toolBar->setObjectName("toobar");
@@ -143,8 +145,8 @@ void MainWindow::setInfomationToServer()
     QNetworkAccessManager* manager = new QNetworkAccessManager;
 
     QString postString =
-                  QString("number=2")
-                + QString("&communicationId=000002")
+                  QString("number=1")
+                + QString("&communicationId=000001")
                 + QString("&startSiteName=") + leftWidget->getStartName()
                 + QString("&startLongitude=") + QString::number(120)
                 + QString("&startLatitude=") + QString::number(33)
@@ -242,9 +244,7 @@ void MainWindow::startMappingSlot()
         setCentralWidget(nullWidget);
         leftWidget->hide();
         rvizWidget->quit();
-        removeDockWidget(helpWidget);
-        addDockWidget(Qt::RightDockWidgetArea, helpWidget);
-        helpWidget->show();
+
         action->setText(QStringLiteral("开始建图"));
         status = 0;
     }
