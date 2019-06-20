@@ -12,6 +12,7 @@ class RosNode
 public:
     RosNode();
     ~RosNode();
+    int getCarId();
     void clearOdom();
     void startSlam();
     void stopSlam();

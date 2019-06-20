@@ -144,9 +144,13 @@ void MainWindow::setInfomationToServer()
 {
     QNetworkAccessManager* manager = new QNetworkAccessManager;
 
+    int carId = rosNode->getCarId();
+    QString carID_Full;
+    carID_Full.sprintf("%06d", carId);
+
     QString postString =
-                  QString("number=1")
-                + QString("&communicationId=000001")
+                  QString("number=") + QString::number(carId)
+                + QString("&communicationId=") + carID_Full
                 + QString("&startSiteName=") + leftWidget->getStartName()
                 + QString("&startLongitude=") + QString::number(120)
                 + QString("&startLatitude=") + QString::number(33)
