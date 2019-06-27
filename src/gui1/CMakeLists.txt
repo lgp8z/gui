@@ -18,19 +18,10 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-set(SOURCES
-  src/gui1_node.cpp
-  src/mainwindow.cpp
-  src/mycp.cpp
-  src/qcustomplot.cpp
-  src/vizlib.cpp
-  src/leftwidget.cpp
-  src/rosnode.cpp
-  src/customwidget.cpp
-)
-
-set(FORMS
-  src/leftwidget.ui
+include_directories(
+  include/gui1
+  include
+  ${catkin_INCLUDE_DIRS}
 )
 
 catkin_package(
@@ -40,11 +31,25 @@ catkin_package(
 #  DEPENDS system_lib
 )
 
-include_directories(
-  include/gui1
-  include
-  ${catkin_INCLUDE_DIRS}
+qt5_wrap_cpp(Gui1Wrap include/gui1/customwidget.h)
+qt5_wrap_cpp(Gui1Wrap include/gui1/leftwidget.h)
+qt5_wrap_cpp(Gui1Wrap include/gui1/qcustomplot.h)
+qt5_wrap_cpp(Gui1Wrap include/gui1/mycp.h)
+qt5_wrap_cpp(Gui1Wrap include/gui1/mainwindow.h)
+
+set(SOURCES
+  src/gui1_node.cpp
+  src/mainwindow.cpp
+  src/mycp.cpp
+  src/qcustomplot.cpp
+  src/vizlib.cpp
+  src/leftwidget.cpp
+  src/rosnode.cpp
+  src/customwidget.cpp
+  ${Gui1Wrap}
 )
+
+qt5_wrap_ui(FORMS src/leftwidget.ui)
 
 add_executable(${PROJECT_NAME}_node ${SOURCES} ${FORMS})
 target_link_libraries(${PROJECT_NAME}_node

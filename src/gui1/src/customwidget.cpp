@@ -1,5 +1,4 @@
 #include "customwidget.h"
-#include "../include/gui1/moc_customwidget.cpp"
 #include <QTextBrowser>
 
 CancelMessageBox::CancelMessageBox(QString text, QWidget *parent):
@@ -52,7 +51,7 @@ QLineEditDialog::QLineEditDialog(QString defaultString, QWidget *parent): QDialo
     setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
     QGridLayout *layout = new QGridLayout(this);
     QLabel *label = new QLabel(this);
-    label->setText(QStringLiteral("   请以英文开头,不允许输入中文!"));
+    label->setText(QStringLiteral("   仅输入十进制数字编号!"));
     layout->addWidget(new QLabel(QStringLiteral("地图名称：")), 0, 0);
     layout->addWidget(m_objectName, 0, 1);
     layout->addWidget(label, 1, 0, 1, 2);
@@ -68,6 +67,15 @@ void QLineEditDialog::accept()
         QMessageBox::warning(this, QStringLiteral("注意"), QStringLiteral("地图名不能为空!"));
         return;
     }
+
+    bool ok;
+    m_objectName->text().toInt(&ok);
+    if(!ok)
+    {
+        QMessageBox::warning(this, QStringLiteral("注意"), QStringLiteral("地图名需为十进制数字!"));
+        return;
+    }
+
     QDialog::accept();
 }
 

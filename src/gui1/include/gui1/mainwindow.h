@@ -11,13 +11,14 @@
 #include <QProcess>
 #include <ros/ros.h>
 #include "customwidget.h"
+#include <QComboBox>
 
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
 
 public:
-    explicit MainWindow(QWidget *parent = nullptr);
+    explicit MainWindow(RosNode *rosNode_, QWidget *parent = nullptr);
     ~MainWindow();
     RosNode *rosNode;
 
@@ -34,10 +35,13 @@ public slots:
 protected:
     void closeEvent(QCloseEvent *event) override;
 private:
+    int carID;
+    QString carID_full;
     void loadLayout();
     QToolBar *toolBar;
     QAction *startMappingAction;
     QAction *customPathAction;
+    QComboBox *comboBox;
     QAction *startNavigationAction;
     VizlibTest *rvizWidget;
     MyCP *myCP;

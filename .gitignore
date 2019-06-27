@@ -6,3 +6,4 @@ tasks.json
 .ycm_extra_conf.pyc
 .ycm_extra_conf.py
 layout.cfg
+.vscode

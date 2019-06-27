@@ -12,13 +12,12 @@ class RosNode
 public:
     RosNode();
     ~RosNode();
-    int getCarId();
+    int getCarId(std::string &carIdString);
     void clearOdom();
     void startSlam();
     void stopSlam();
-    void startNavigation();
+    void startNavigation(std::string mapName);
     void stopNavigation();
-    int getAgentStatus();
 private:
     std::shared_ptr<std::thread> thread_ptr;
     ros::NodeHandle node;

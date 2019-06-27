@@ -5,19 +5,21 @@
 #include <QFile>
 #include <QCloseEvent>
 #include <QMessageBox>
-#include "../include/gui1/moc_mainwindow.cpp"
 
 #include <QtNetwork/QNetworkRequest>
 #include <QtNetwork/QNetworkReply>
 #include <QtNetwork/QNetworkAccessManager>
+#include <string>
+#include <QDir>
 
-MainWindow::MainWindow(QWidget *parent) :
+MainWindow::MainWindow(RosNode *rosNode_, QWidget *parent) :
     QMainWindow(parent)
 {
     setObjectName("MainWindow");
     setWindowTitle(QStringLiteral("控制界面"));
     setWindowState(Qt::WindowMaximized);
 
+    rosNode = rosNode_;
     status = 0;
     myCP = nullptr;
     processWidget = new ProcessWidget(this);
@@ -66,7 +68,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     toolBar->addAction(QStringLiteral("上传地图"), this, SLOT(upload()));
     toolBar->addSeparator();
-
+    comboBox = new QComboBox(this);
+    toolBar->addWidget(comboBox);
     startNavigationAction = new QAction(QStringLiteral("启动业务"));
     startNavigationAction->setCheckable(true);
     connect(startNavigationAction, SIGNAL(triggered(bool)), this, SLOT(startNavigatingSlot()));
@@ -87,6 +90,27 @@ MainWindow::MainWindow(QWidget *parent) :
     checkRosTimer->setInterval(1000);
     checkRosTimer->start();
     connect(checkRosTimer, SIGNAL(timeout()), this, SLOT(checkRosSlot()));
+
+
+    //添加combox列表
+    std::string carID_string;
+    carID = rosNode->getCarId(carID_string);
+    carID_full = QString::fromStdString(carID_string);
+    qDebug() << "carID_full";
+    QDir mapdir("/home/roboway/workspace/catkin_roboway/src/bringup/map");
+    mapdir.mkdir(carID_full);
+    mapdir.cd(carID_full);
+    mapdir.setSorting(QDir::Name);
+    QStringList maplist = mapdir.entryList(QStringList("*.yaml"));
+    qDebug() << maplist;
+    for (QString name : maplist)
+    {
+        name = name.split(".").first();
+        bool ok;
+        name.toInt(&ok);
+        if(ok == true)
+            comboBox->addItem(name);
+    }
 
     loadLayout();
 }
@@ -144,13 +168,9 @@ void MainWindow::setInfomationToServer()
 {
     QNetworkAccessManager* manager = new QNetworkAccessManager;
 
-    int carId = rosNode->getCarId();
-    QString carID_Full;
-    carID_Full.sprintf("%06d", carId);
-
     QString postString =
-                  QString("number=") + QString::number(carId)
-                + QString("&communicationId=") + carID_Full
+                  QString("number=") + QString::number(carID)
+                + QString("&communicationId=") + carID_full
                 + QString("&startSiteName=") + leftWidget->getStartName()
                 + QString("&startLongitude=") + QString::number(120)
                 + QString("&startLatitude=") + QString::number(33)
@@ -199,7 +219,7 @@ void MainWindow::startMappingSlot()
 
         rosNode->clearOdom();
         rosNode->startSlam();
-        traceProcess->start("rosrun roboway_tool trace " + mapName);
+        traceProcess->start("rosrun roboway_tool trace " + carID_full + " " + mapName);
 
         action->setText(QStringLiteral("停止建图"));
         centralWidget()->setParent(0);
@@ -228,9 +248,11 @@ void MainWindow::startMappingSlot()
                 setInfomationToServer();
 
                 QProcess process;
-                process.start("/home/roboway/workspace/catkin_roboway/src/bringup/script/save_map.sh " + mapName);
+                process.start("/home/roboway/workspace/catkin_roboway/src/bringup/script/save_map.sh " + carID_full + " " + mapName);
                 process.waitForFinished();
 
+                if(-1 == comboBox->findText(mapName))
+                    comboBox->addItem(mapName);
                 QMessageBox::information(this, QStringLiteral("提示"), QStringLiteral("已停止建图, 请绘制路径"));
             }
             else if(result == 0) // close  关闭消息框  , else 取消建图
@@ -261,7 +283,6 @@ void MainWindow::startMappingSlot()
 
 void MainWindow::customPath()
 {
-    qDebug() << "ddd";
     if(status == 0 || status == 3) //开始画路径
     {
         QLineEditDialog dialog(mapName, this);
@@ -271,7 +292,7 @@ void MainWindow::customPath()
             return;
         }
         QString mapName_input = dialog.enteredString();
-
+        mapName_input = carID_full + "/" + mapName_input;
         status = 2;
         if(myCP != nullptr)//重画路径时如果是同一张地图,不需要new
         {
@@ -324,7 +345,7 @@ void MainWindow::upload()
 
     processWidget->show();
     connect(commondProcess, SIGNAL(finished(int)), SLOT(closeProcessWidget()));
-    commondProcess->start("/home/roboway/workspace/catkin_roboway/src/bringup/script/sync_file.sh " + mapName_input);
+    commondProcess->start("/home/roboway/workspace/catkin_roboway/src/bringup/script/sync_file.sh " + carID_full + " " + mapName_input);
 }
 void MainWindow::closeProcessWidget()
 {
@@ -332,15 +353,17 @@ void MainWindow::closeProcessWidget()
 }
 void MainWindow::startNavigatingSlot()
 {
+    if(comboBox->currentIndex() == -1)
+    {
+        QMessageBox::warning(this, QStringLiteral("注意"), QStringLiteral("请选择地图!"));
+        startNavigationAction->setChecked(false);
+        return;
+    }
     QAction *action = (QAction *)sender();
 
     if(status == 0 || status == 3)
     {
-        if(0 == rosNode->getAgentStatus())//打开软件后 根据车子情况自动进入导航状态
-        {
-            rosNode->clearOdom();
-            rosNode->startNavigation();
-        }
+        rosNode->startNavigation(comboBox->currentText().toStdString());
 
         centralWidget()->setParent(0);
         setCentralWidget(splitter);

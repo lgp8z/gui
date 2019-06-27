@@ -3,7 +3,6 @@
 #include "nlohmann/json.hpp"
 #include <fstream>
 #include <string>
-#include "../include/gui1/moc_mycp.cpp"
 #include "yaml-cpp/yaml.h"
 
 using json = nlohmann::json;

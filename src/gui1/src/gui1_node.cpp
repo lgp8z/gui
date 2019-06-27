@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include <QApplication>
 #include <rosnode.h>
+#include <QElapsedTimer>
 
 int main(int argc, char *argv[])
 {
@@ -9,8 +10,7 @@ int main(int argc, char *argv[])
     QApplication a(argc, argv);
     RosNode rosNode;
 
-    MainWindow w;
-    w.rosNode = &rosNode;
+    MainWindow w(&rosNode);
     w.show();
     return a.exec();
 }

@@ -1,6 +1,7 @@
 #include "rosnode.h"
 #include "agent/commond.h"
 #include "motor_control/motor_commond.h"
+#include <string>
 
 #include <QDebug>
 RosNode::RosNode()
@@ -30,12 +31,13 @@ void RosNode::clearOdom()
     motor_commond_srv.request.commond = 3;
     motor_control_client.call(motor_commond_srv);
 }
-int RosNode::getCarId()
+int RosNode::getCarId(std::string &carIdString)
 {
     agent::commond agent_commond_srv;
     agent_commond_srv.request.type = 0;
-    agent_commond_srv.request.value = 5;
+    agent_commond_srv.request.value = 4;
     agent_client.call(agent_commond_srv);
+    carIdString = agent_commond_srv.response.returnString;
     return agent_commond_srv.response.returnValue;
 }
 void RosNode::startSlam()
@@ -52,11 +54,12 @@ void RosNode::stopSlam()
     agent_commond_srv.request.value = 1;
     agent_client.call(agent_commond_srv);
 }
-void RosNode::startNavigation()
+void RosNode::startNavigation(std::string mapName)
 {
     agent::commond agent_commond_srv;
     agent_commond_srv.request.type = 0;
     agent_commond_srv.request.value = 2;
+    agent_commond_srv.request.mapName = mapName;
     agent_client.call(agent_commond_srv);
 }
 void RosNode::stopNavigation()
@@ -65,14 +68,6 @@ void RosNode::stopNavigation()
     agent_commond_srv.request.type = 0;
     agent_commond_srv.request.value = 3;
     agent_client.call(agent_commond_srv);
-}
-int RosNode::getAgentStatus()
-{
-    agent::commond agent_commond_srv;
-    agent_commond_srv.request.type = 0;
-    agent_commond_srv.request.value = 4;
-    agent_client.call(agent_commond_srv);
-    return agent_commond_srv.response.returnValue;
 }
 RosNode::~RosNode()
 {
