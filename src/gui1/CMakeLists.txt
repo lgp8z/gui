@@ -57,4 +57,5 @@ target_link_libraries(${PROJECT_NAME}_node
 )
 
 target_link_libraries(${PROJECT_NAME}_node yaml-cpp)
-target_link_libraries(${PROJECT_NAME}_node Qt5::Core Qt5::Gui Qt5::Widgets Qt5::PrintSupport Qt5::Network)
+
+qt5_use_modules(${PROJECT_NAME}_node Core Gui Widgets PrintSupport Network)
