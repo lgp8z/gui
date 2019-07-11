@@ -40,8 +40,14 @@ MainWindow::MainWindow(RosNode *rosNode_, QWidget *parent) :
         splitter->handle(i)->setEnabled(false);
     }
 
+    setCentralWidget(new QWidget(this));
+    layout = new QVBoxLayout(centralWidget());
+    centralWidget()->setLayout(layout);
     nullWidget = new QWidget(this);
-    setCentralWidget(nullWidget);
+    nullWidget->hide();
+    layout->addWidget(nullWidget);
+    layout->addWidget(splitter);
+    splitter->hide();
 
     helpWidget = new CustomDockWindow(QStringLiteral("帮助"), this);
     helpWidget->setObjectName("helpWidget");
@@ -222,8 +228,12 @@ void MainWindow::startMappingSlot()
         traceProcess->start("rosrun roboway_tool trace " + carID_full + " " + mapName);
 
         action->setText(QStringLiteral("停止建图"));
-        centralWidget()->setParent(0);
-        setCentralWidget(splitter);
+        if(myCP != nullptr)
+        {
+            delete myCP;
+            myCP = nullptr;
+        }
+        splitter->show();
         leftWidget->show();
         rvizWidget->display_Slam();
         status = 1;
@@ -266,9 +276,8 @@ void MainWindow::startMappingSlot()
         traceProcess->waitForFinished();
         rosNode->stopSlam();
 
-        centralWidget()->setParent(0);
-        setCentralWidget(nullWidget);
         leftWidget->hide();
+        splitter->hide();
         rvizWidget->quit();
 
         action->setText(QStringLiteral("开始建图"));
@@ -304,11 +313,10 @@ void MainWindow::customPath()
         }
         else
         {
-            myCP = new MyCP(mapName_input, this);
+            myCP = new MyCP(mapName_input, nullptr);
         }
 
-        centralWidget()->setParent(0);
-        setCentralWidget(myCP);
+        layout->addWidget(myCP);
         myCP->paintPath();
     }
     else if(status == 2)//绘制完成
@@ -365,8 +373,12 @@ void MainWindow::startNavigatingSlot()
     {
         rosNode->startNavigation(comboBox->currentText().toStdString());
 
-        centralWidget()->setParent(0);
-        setCentralWidget(splitter);
+        if(myCP != nullptr)
+        {
+            delete myCP;
+            myCP = nullptr;
+        }
+        splitter->show();
         leftWidget->hide();
         rvizWidget->display_Navigation();
         action->setText(QStringLiteral("停止业务"));
@@ -375,10 +387,10 @@ void MainWindow::startNavigatingSlot()
     else if(status == 4)
     {
         rosNode->stopNavigation();
-        centralWidget()->setParent(0);
+
+        splitter->hide();
         leftWidget->hide();
         rvizWidget->quit();
-        setCentralWidget(nullWidget);
         action->setText(QStringLiteral("启动业务"));
         status = 0;
     }
